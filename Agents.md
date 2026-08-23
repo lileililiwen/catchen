@@ -200,17 +200,23 @@ When asked to implement a feature or spec:
 
 ### 7.1 Shipped & archived
 
-None yet. Quality gates land first so every later change merges under full
-gating.
+Source of truth in `openspec/specs/`. The quality-gate platform shipped and
+archived (2026-08-23): `editorconfig-and-analyzers`,
+`architecture-enforcement`, `coverage-gates`, `dependency-audit`,
+`git-hooks`, `ci-pipeline`, `ai-code-conventions`, `branch-protection`.
+Backend scaffold is partially in place (`backend/Catchen.sln`: eight domain
+modules + Data + Api, PostgreSQL/SQLite provider registry, initial
+migration; Flutter shells under `clients/`). Build 0 warnings / 0 errors;
+16 backend tests + architecture tests green; CI green on GitHub Actions;
+`main` protected (PR-only, 1 approval, required check `build`).
 
 ### 7.2 Pending changes (implement in this order)
 
 | Order | Change | Capabilities | One-line summary |
 |---|---|---|---|
-| 1 | `add-quality-gates` | editorconfig-and-analyzers, architecture-enforcement, coverage-gates, dependency-audit, git-hooks, ci-pipeline, ai-code-conventions, branch-protection | Formatting/analyzers, architecture tests, incremental coverage, dependency audit, hooks, CI, AI conventions, branch protection |
-| 2 | `launch-overseas-recipe-membership` | offshore-user-access, standardized-recipe-catalog, recipe-commerce, shopping-and-affiliates, recipe-operations | Phase 1: offshore consumer membership, recipe catalog/commerce, PDFs, affiliates, ops console |
-| 3 | `add-instructor-course-marketplace` | tutor-onboarding, tutor-content, coaching-bookings, marketplace-engagement, commissions-and-payouts | Phase 2: verified tutor marketplace, courses/coaching, commissions/payouts |
-| 4 | `add-cooking-community-ecosystem` | live-learning, events-and-competitions, cooking-community, commercial-partnerships | Phase 3: live learning, competitions, communities, brand partnerships |
+| 1 | `launch-overseas-recipe-membership` | offshore-user-access, standardized-recipe-catalog, recipe-commerce, shopping-and-affiliates, recipe-operations | Phase 1: offshore consumer membership, recipe catalog/commerce, PDFs, affiliates, ops console (task 1.1 remainder: workers/storage/audit; task 1.2 remainder: API contracts + role-aware navigation) |
+| 2 | `add-instructor-course-marketplace` | tutor-onboarding, tutor-content, coaching-bookings, marketplace-engagement, commissions-and-payouts | Phase 2: verified tutor marketplace, courses/coaching, commissions/payouts |
+| 3 | `add-cooking-community-ecosystem` | live-learning, events-and-competitions, cooking-community, commercial-partnerships | Phase 3: live learning, competitions, communities, brand partnerships |
 
 ### 7.3 Deferred
 
