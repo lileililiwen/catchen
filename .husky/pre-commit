@@ -1,0 +1,19 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Fast local format check on staged files only.
+# CI (dotnet format / dart format on the whole tree) is the authoritative
+# gate; this hook gives instant feedback before commit. Both checks no-op
+# until the backend solution / client workspace scaffolds exist.
+
+sln=$(find . -maxdepth 3 -name '*.sln' -not -path './clients/*' 2>/dev/null | head -n 1)
+staged_cs=$(git diff --cached --name-only --diff-filter=ACM -- '*.cs')
+if [ -n "$sln" ] && [ -n "$staged_cs" ]; then
+  dotnet format "$sln" --verify-no-changes --no-restore --include $staged_cs || exit 1
+fi
+
+client_dir=$(find . -maxdepth 3 -name pubspec.yaml -not -path '*/build/*' 2>/dev/null | head -n 1 | xargs dirname 2>/dev/null)
+staged_dart=$(git diff --cached --name-only --diff-filter=ACM -- '*.dart')
+if [ -n "$client_dir" ] && [ -n "$staged_dart" ]; then
+  (cd "$client_dir" && dart format --set-exit-if-changed --output=none $staged_dart) || exit 1
+fi

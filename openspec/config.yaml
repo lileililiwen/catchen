@@ -1,0 +1,54 @@
+schema: spec-driven
+
+# Project context — shown to AI when creating artifacts.
+context: |
+  Catchen: an OFFSHORE-ONLY cooking platform for English-speaking consumers
+  outside Mainland China (no domestic availability, no +86 registration, no
+  WeChat Pay/Alipay, no Xiaohongshu/Douyin/domestic-WeChat promotion).
+  Original standardized Chinese recipes only — measurable quantities,
+  local substitutes, Western equipment, provenance evidence.
+
+  Backend: ASP.NET Core modular monolith on .NET LTS Minimal APIs + EF Core,
+  PostgreSQL, background workers, object storage. Modules under backend/src/
+  (Identity, Catalog, Editorial, Commerce, Documents, Affiliates, Moderation,
+  Reporting) plus Catchen.Data (central AppDbContext/migrations/seeding) and
+  Catchen.Api (composition root). Modules NEVER reference Data/Api; services
+  inject the base DbContext; every query filters by owner or admin scope.
+  Clients: Flutter consumer app + Flutter ops console, server-authoritative
+  policy (clients present results only), generated API contracts.
+  Commerce: provider-neutral ledger (products/orders/payments/refunds/
+  entitlements); Stripe first, PayPal via same boundary; signed webhook
+  inboxes with idempotency. Financial ledgers are immutable-append.
+  Recipes: structured drafts → immutable published versions; deterministic
+  validation engine + human dual review before publication; PDFs render from
+  immutable versions.
+
+  NORMATIVE RULES: `Agents.md` at the repo root is the binding contract for
+  all agents and humans — architecture pattern, spec-first OpenSpec workflow
+  (propose → validate → apply → archive), serious-code standard, verification
+  standard, anti-patterns, and roadmap order. Read it before any work.
+
+  Quality gates (capability add-quality-gates): warnings-as-errors +
+  analyzers (.editorconfig / Directory.Build.props / analysis_options.yaml),
+  NetArchTest architecture tests enforcing module boundaries, incremental
+  new-code coverage gate (80%, legacy reported not gated), NuGet+pub
+  vulnerability audit with dated SECURITY-ACCEPTANCES.md policy, Husky.Net
+  hooks (CI authoritative), CI gating every push/PR, AI-involvement PR
+  markers + review checklist, protected main (PR-only, required build check).
+
+# Per-artifact rules (optional)
+rules:
+  proposal:
+    - Keep proposals focused on WHY and WHAT, not HOW
+    - Always include a "Non-goals" section
+    - State which phase the change belongs to and that no later-phase capability leaks in
+  design:
+    - Always include a "Risks / Trade-offs" section with mitigations
+    - Name existing modules/utilities being reused (global-view rule)
+    - Document offshore-compliance impact (region policy, payment/promotion channels)
+  specs:
+    - Use SHALL/MUST normative language; every requirement has at least one WHEN/THEN scenario
+    - Include negative scenarios (invalid region, non-owner, missing fields, replay)
+  tasks:
+    - Break tasks into chunks of max 2 hours
+    - Group under "## N." headings with checkbox items

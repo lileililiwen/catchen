@@ -1,0 +1,13 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Fast local build gate before pushing; same warnings-as-errors setting as CI.
+# No-ops until the backend solution scaffold exists (platform-foundation task).
+# Serialize MSBuild and avoid persistent build servers so the full solution is
+# reliable across local SDK installations and constrained development shells.
+
+sln=$(find . -maxdepth 3 -name '*.sln' -not -path './clients/*' 2>/dev/null | head -n 1)
+if [ -n "$sln" ]; then
+  dotnet build "$sln" --no-restore /warnaserror \
+    --maxcpucount:1 --disable-build-servers || exit 1
+fi

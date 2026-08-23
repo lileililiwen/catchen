@@ -1,0 +1,146 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Required merge check (see CONTRIBUTING.md / branch-protection).
+  # Dotnet steps no-op until the backend solution scaffold exists
+  # (launch-overseas-recipe-membership task 1.1); the job still runs and
+  # passes so `build` is a stable required check from day one.
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so diff-based tooling (coverage gate) can work.
+          fetch-depth: 0
+
+      - name: Locate backend solution
+        id: sln
+        run: |
+          path=$(find . -maxdepth 3 -name '*.sln' -not -path './clients/*' | head -n 1 || true)
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+
+      - name: Setup .NET
+        if: steps.sln.outputs.path != ''
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        if: steps.sln.outputs.path != ''
+        run: dotnet restore "${{ steps.sln.outputs.path }}"
+
+      - name: NuGet audit
+        if: steps.sln.outputs.path != ''
+        run: |
+          sln="${{ steps.sln.outputs.path }}"
+          dotnet list "$sln" package --vulnerable --include-transitive
+          if dotnet list "$sln" package --vulnerable --include-transitive | grep -qE '^\s*>\s+\S+\s+[0-9].*\s(High|Critical)\s'; then
+            echo "::error::Known high/critical NuGet vulnerabilities found. Upgrade the package or add a dated, owner-signed entry to SECURITY-ACCEPTANCES.md."
+            exit 1
+          fi
+
+      - name: Format verify
+        # Fails on any drift from the .editorconfig (deterministic formatting).
+        if: steps.sln.outputs.path != ''
+        run: dotnet format "${{ steps.sln.outputs.path }}" --verify-no-changes --no-restore
+
+      - name: Build
+        if: steps.sln.outputs.path != ''
+        run: dotnet build "${{ steps.sln.outputs.path }}" -c Release --no-restore /warnaserror -bl:build.binlog
+
+      - name: Test (with OpenCover coverage)
+        if: steps.sln.outputs.path != ''
+        run: >
+          dotnet test "${{ steps.sln.outputs.path }}" -c Release --no-build
+          --collect:"XPlat Code Coverage" --settings Coverlet.runsettings
+          --results-directory TestResults
+
+      - name: Incremental coverage gate
+        # Fails when the executable lines added by this PR fall below 80%
+        # coverage (test projects, EF migrations, and generated code excluded).
+        # Only evaluated on pull requests, where the base ref exists.
+        if: github.event_name == 'pull_request' && steps.sln.outputs.path != ''
+        run: python3 scripts/check_incremental_coverage.py --base origin/main --threshold 0.80 --reports 'TestResults/**/coverage.opencover.xml'
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            TestResults/**/coverage.opencover.xml
+            clients/**/coverage/lcov.info
+          if-no-files-found: ignore
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            build.binlog
+            **/TestResults/
+          if-no-files-found: ignore
+
+  # Flutter clients (consumer + ops). No-ops until the client workspace
+  # scaffold exists; same pattern as the build job.
+  flutter:
+    name: flutter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Locate client workspace
+        id: ws
+        shell: bash
+        run: |
+          path=$(find . -maxdepth 3 -name pubspec.yaml -not -path '*/build/*' | head -n 1 || true)
+          dir="."
+          [ -n "$path" ] && dir="$(dirname "$path")"
+          {
+            echo "path=$path"
+            echo "dir=$dir"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Setup Flutter
+        if: steps.ws.outputs.path != ''
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Pub get
+        if: steps.ws.outputs.path != ''
+        working-directory: ${{ steps.ws.outputs.dir }}
+        run: flutter pub get
+
+      - name: Dart format verify
+        if: steps.ws.outputs.path != ''
+        working-directory: ${{ steps.ws.outputs.dir }}
+        run: dart format --set-exit-if-changed --output=none .
+
+      - name: Analyze
+        if: steps.ws.outputs.path != ''
+        working-directory: ${{ steps.ws.outputs.dir }}
+        run: flutter analyze
+
+      - name: Pub dependency audit
+        if: steps.ws.outputs.path != ''
+        working-directory: ${{ steps.ws.outputs.dir }}
+        run: bash "$GITHUB_WORKSPACE/scripts/audit_pub_packages.sh"
+
+      - name: Test (with coverage)
+        if: steps.ws.outputs.path != ''
+        working-directory: ${{ steps.ws.outputs.dir }}
+        run: flutter test --coverage

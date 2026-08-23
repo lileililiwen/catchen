@@ -1,0 +1,39 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+TestResults/
+build.binlog
+artifacts/
+project.lock.json
+*.nuget.props
+*.nuget.targets
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+coverage/
+*.g.dart
+*.freezed.dart
+pubspec.lock
+
+# IDE
+.idea/
+.vs/
+.vscode/
+*.swp
+
+# Husky runtime
+.husky/_/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc

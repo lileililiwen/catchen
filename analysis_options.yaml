@@ -1,0 +1,33 @@
+# Strict Dart/Flutter analysis for the Catchen clients (consumer + ops).
+# Applies to every package under clients/ unless a package overrides it.
+# `dart format` remains the formatting authority; this file governs lints.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    invalid_annotation_target: ignore
+
+linter:
+  rules:
+    - always_declare_return_types
+    - cancel_subscriptions
+    - close_sinks
+    - comment_references
+    - one_member_abstracts
+    - only_throw_errors
+    - prefer_final_in_for_each
+    - prefer_final_locals
+    - prefer_single_quotes
+    - require_trailing_commas
+    - sort_child_properties_last
+    - sort_constructors_first
+    - sort_unnamed_constructors_first
+    - throw_in_finally
+    - unawaited_futures
+    - unnecessary_await_in_return
+    - unreachable_from_main
+    - use_string_in_part_of_directives
