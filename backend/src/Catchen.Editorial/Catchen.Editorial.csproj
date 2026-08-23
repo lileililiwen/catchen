@@ -7,7 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.30" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+  <!-- Declared module edges (Agents.md §2 fixture): the editorial workflow
+       produces catalog entries and writes compliance audit events. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Catchen.Catalog\Catchen.Catalog.csproj" />
+    <ProjectReference Include="..\Catchen.Identity\Catchen.Identity.csproj" />
   </ItemGroup>
 
 </Project>

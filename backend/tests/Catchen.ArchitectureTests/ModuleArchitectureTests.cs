@@ -42,7 +42,7 @@ public sealed class ModuleArchitectureTests
         {
             ["Catchen.Identity"] = Array.Empty<string>(),
             ["Catchen.Catalog"] = Array.Empty<string>(),
-            ["Catchen.Editorial"] = Array.Empty<string>(),
+            ["Catchen.Editorial"] = ["Catchen.Catalog", "Catchen.Identity"],
             ["Catchen.Commerce"] = Array.Empty<string>(),
             ["Catchen.Documents"] = Array.Empty<string>(),
             ["Catchen.Affiliates"] = Array.Empty<string>(),
