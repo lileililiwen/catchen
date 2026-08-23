@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.30" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.30">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.30" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.30" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+    <!-- Direct reference lifts the vulnerable transitive 2.1.6 (GHSA-2m69-gcr7-jv3q). -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.13" />
+  </ItemGroup>
+
+  <!-- The central DbContext references every module; modules never reference
+       Catchen.Data (Agents.md §2 dependency rule). -->
+  <ItemGroup>
+    <ProjectReference Include="..\Catchen.Affiliates\Catchen.Affiliates.csproj" />
+    <ProjectReference Include="..\Catchen.Catalog\Catchen.Catalog.csproj" />
+    <ProjectReference Include="..\Catchen.Commerce\Catchen.Commerce.csproj" />
+    <ProjectReference Include="..\Catchen.Documents\Catchen.Documents.csproj" />
+    <ProjectReference Include="..\Catchen.Editorial\Catchen.Editorial.csproj" />
+    <ProjectReference Include="..\Catchen.Identity\Catchen.Identity.csproj" />
+    <ProjectReference Include="..\Catchen.Moderation\Catchen.Moderation.csproj" />
+    <ProjectReference Include="..\Catchen.Reporting\Catchen.Reporting.csproj" />
+  </ItemGroup>
+
+</Project>

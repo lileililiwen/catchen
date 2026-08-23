@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="TngTech.ArchUnitNET" Version="0.13.3" />
+    <PackageReference Include="TngTech.ArchUnitNET.xUnit" Version="0.13.3" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Architecture tests must see every module assembly to verify the graph. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Catchen.Affiliates\Catchen.Affiliates.csproj" />
+    <ProjectReference Include="..\..\src\Catchen.Api\Catchen.Api.csproj" />
+    <ProjectReference Include="..\..\src\Catchen.Catalog\Catchen.Catalog.csproj" />
+    <ProjectReference Include="..\..\src\Catchen.Commerce\Catchen.Commerce.csproj" />
+    <ProjectReference Include="..\..\src\Catchen.Data\Catchen.Data.csproj" />
+    <ProjectReference Include="..\..\src\Catchen.Documents\Catchen.Documents.csproj" />
+    <ProjectReference Include="..\..\src\Catchen.Editorial\Catchen.Editorial.csproj" />
+    <ProjectReference Include="..\..\src\Catchen.Identity\Catchen.Identity.csproj" />
+    <ProjectReference Include="..\..\src\Catchen.Moderation\Catchen.Moderation.csproj" />
+    <ProjectReference Include="..\..\src\Catchen.Reporting\Catchen.Reporting.csproj" />
+  </ItemGroup>
+
+</Project>

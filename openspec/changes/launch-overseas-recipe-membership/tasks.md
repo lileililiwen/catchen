@@ -1,7 +1,10 @@
 ## 1. Foundation and Compliance
 
 - [ ] 1.1 Create the ASP.NET Core modular solution, PostgreSQL schema, background workers, object storage, and audit infrastructure.
+  - Delivered so far: `backend/Catchen.sln` with the eight domain modules + `Catchen.Data` (provider registry: PostgreSQL default / SQLite dev, retry-on-failure, design-time factory) + `Catchen.Api` composition root (`/healthz`), initial EF migration, build 0 warnings / 0 errors.
+  - Remaining: background workers, object storage abstraction, audit infrastructure.
 - [ ] 1.2 Create Flutter consumer and administrative shells with generated API contracts and role-aware navigation.
+  - Blocked: Flutter SDK not installed in this environment; install Flutter or run on a machine with it before starting this task.
 - [ ] 1.3 Implement email/non-+86 identity, agreement evidence, regional policy evaluation, and restricted-operation tests.
 - [ ] 1.4 Add configurable payment, distribution, and promotion-channel allowlists and denylists.
 

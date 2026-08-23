@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.30">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Catchen.Affiliates\Catchen.Affiliates.csproj" />
+    <ProjectReference Include="..\Catchen.Catalog\Catchen.Catalog.csproj" />
+    <ProjectReference Include="..\Catchen.Commerce\Catchen.Commerce.csproj" />
+    <ProjectReference Include="..\Catchen.Data\Catchen.Data.csproj" />
+    <ProjectReference Include="..\Catchen.Documents\Catchen.Documents.csproj" />
+    <ProjectReference Include="..\Catchen.Editorial\Catchen.Editorial.csproj" />
+    <ProjectReference Include="..\Catchen.Identity\Catchen.Identity.csproj" />
+    <ProjectReference Include="..\Catchen.Moderation\Catchen.Moderation.csproj" />
+    <ProjectReference Include="..\Catchen.Reporting\Catchen.Reporting.csproj" />
+  </ItemGroup>
+
+</Project>

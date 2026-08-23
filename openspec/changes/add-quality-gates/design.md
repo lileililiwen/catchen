@@ -32,11 +32,11 @@ Alternative: sequence them as eight changes. Rejected — they are small, indepe
 
 Alternative: warnings-as-notices. Rejected — notice-level warnings accumulate silently and become permanent debt.
 
-### Architecture tests via NetArchTest.Rules
+### Architecture tests via ArchUnitNET
 
-Use NetArchTest.Rules (lightweight, xUnit-native) to assert: modules never reference the Data/composition-root projects; services depend on abstractions; no cross-module entity navigation shortcuts; every module is registered in the composition root. A fixture lists the allowed dependency graph per `Agents.md`; adding a module without updating the fixture fails the suite.
+Use TngTech.ArchUnitNET (+ ArchUnitNET.xUnit) to assert: modules never reference the Data/composition-root projects; services depend on abstractions; no cross-module entity navigation shortcuts; every module is registered in the composition root. A fixture lists the allowed dependency graph per `Agents.md`; adding a module without updating the fixture fails the suite (a filesystem scan asserts every `backend/src/Catchen.*` directory is declared). Chosen over NetArchTest.Rules for parity with the proven reference implementation this change was modeled on.
 
-Alternative: ArchUnitNET. Rejected — heavier API for the same assertions at this solution size.
+Alternative: NetArchTest.Rules. Rejected — same assertions but the team's reference implementation and review experience are on ArchUnitNET.
 
 ### Incremental coverage via diff-based gate script
 

@@ -2,17 +2,17 @@
 
 - [x] 1.1 Add root `.editorconfig` (C#, Dart/Flutter, YAML, JSON, Markdown conventions) and shared `Directory.Build.props` with `TreatWarningsAsErrors`, nullable enable, latest analyzers, deterministic builds.
 - [x] 1.2 Add Flutter `analysis_options.yaml` with `flutter_lints` and strict Dart options; verify `dart format` determinism. *(verification deferred until a client workspace exists)*
-- [ ] 1.3 Verify `dotnet format --verify-no-changes` passes on the solution. *(blocked on backend scaffold — launch-overseas-recipe-membership task 1.1)*
+- [x] 1.3 Verify `dotnet format --verify-no-changes` passes on the solution. *(backend/Catchen.sln — verified clean)*
 
 ## 2. Architecture Enforcement
 
-- [ ] 2.1 Create the backend test project and add NetArchTest.Rules. *(blocked on backend scaffold)*
-- [ ] 2.2 Encode the module dependency graph fixture per `Agents.md` §2 (allowed references, forbidden Data/composition-root references from modules). *(blocked on backend scaffold)*
-- [ ] 2.3 Add tests: illegal reference fails, missing composition-root registration fails, new-module-without-fixture-update fails. *(blocked on backend scaffold)*
+- [x] 2.1 Create the backend test project and add the architecture-test library. *(TngTech.ArchUnitNET 0.13.3 — chosen over NetArchTest for parity with the proven reference implementation; design.md decision updated)*
+- [x] 2.2 Encode the module dependency graph fixture per `Agents.md` §2 (allowed references, forbidden Data/composition-root references from modules). *(backend/tests/Catchen.ArchitectureTests/ModuleArchitectureTests.cs)*
+- [x] 2.3 Add tests: illegal reference fails, missing composition-root registration fails, new-module-without-fixture-update fails. *(6 tests green; undeclared-module scan included)*
 
 ## 3. Coverage Gates
 
-- [ ] 3.1 Add xUnit unit-test projects wired to the solution; add Coverlet OpenCover collector settings (`Coverlet.runsettings`). *(runsettings done; test projects blocked on backend scaffold)*
+- [x] 3.1 Add xUnit unit-test projects wired to the solution; add Coverlet OpenCover collector settings (`Coverlet.runsettings`). *(Catchen.UnitTests + coverlet.collector; selector tests green)*
 - [ ] 3.2 Wire `flutter test --coverage` output into the gate script. *(CI step + lcov artifact added; end-to-end wiring blocked on client scaffold)*
 - [x] 3.3 Implement the incremental new-code coverage gate script (80% threshold; excludes `tests/`, `Migrations/`, generated code); verify pass/fail/skip behaviors. *(script in place; CI runs it PR-only; full pass/fail verification once reports exist)*
 
