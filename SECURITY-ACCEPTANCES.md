@@ -23,3 +23,4 @@ Accepted dependency-risk entries for the Catchen repository.
 | Date | Package | Advisory / ID | Severity | Expiry | Owner | Rationale & remediation plan |
 |------|---------|---------------|----------|--------|-------|------------------------------|
 | _(none)_ | | | | | | |
+direct-push probe
