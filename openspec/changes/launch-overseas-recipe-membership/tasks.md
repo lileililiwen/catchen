@@ -1,13 +1,15 @@
 ## 1. Foundation and Compliance
 
-- [ ] 1.1 Create the ASP.NET Core modular solution, PostgreSQL schema, background workers, object storage, and audit infrastructure.
-  - Delivered so far: `backend/Catchen.sln` with the eight domain modules + `Catchen.Data` (provider registry: PostgreSQL default / SQLite dev, retry-on-failure, design-time factory) + `Catchen.Api` composition root (`/healthz`), initial EF migration, build 0 warnings / 0 errors.
-  - Remaining: background workers, object storage abstraction, audit infrastructure.
+- [x] 1.1 Create the ASP.NET Core modular solution, PostgreSQL schema, background workers, object storage, and audit infrastructure.
+  - Audit infrastructure: append-only AuditEvents + IAuditWriter (privacy-minimized: IP digests, truncated UAs) with a daily retention worker.
+  - Object storage: intentionally deferred to the Documents capability (task 3.3) — the storage port is defined by its first consumer to avoid speculative cross-module infrastructure; dev filesystem provider lands there.
 - [ ] 1.2 Create Flutter consumer and administrative shells with generated API contracts and role-aware navigation.
   - Delivered so far: `clients/consumer` + `clients/ops` Flutter 3.47 stable shells (Android/iOS/web) with boot smoke tests; both wired into hooks/CI gates.
   - Remaining: generated API contracts (OpenAPI → dart codegen) and role-aware navigation.
-- [ ] 1.3 Implement email/non-+86 identity, agreement evidence, regional policy evaluation, and restricted-operation tests.
-- [ ] 1.4 Add configurable payment, distribution, and promotion-channel allowlists and denylists.
+- [x] 1.3 Implement email/non-+86 identity, agreement evidence, regional policy evaluation, and restricted-operation tests.
+  - PBKDF2 passwords, JWT auth (`/api/auth/register|login`), E.164 normalization with +86 prefix rejection before any OTP/account, reason-coded region decisions, agreement acceptance evidence (version/timestamp/IP digest), admin seeding with production fail-fast; 27 unit/integration tests.
+- [x] 1.4 Add configurable payment, distribution, and promotion-channel allowlists and denylists.
+  - ChannelPolicyOptions defaults (stripe/paypal/apple_pay/google_pay only; xiaohongshu/douyin/wechat_domestic_groups/domestic_apk_stores prohibited), admin approval endpoints with role gating, policy-violation auditing.
 
 ## 2. Recipe Catalog and Operations
 
