@@ -48,12 +48,13 @@ import 'package:catchen_api_client/api.dart';
 //defaultApiClient.getAuthentication<HttpBearerAuth>('Bearer').setAccessToken(yourTokenGeneratorFunction);
 
 final api_instance = CatchenApiApi();
+final id = 38400000-8cf0-11bd-b23e-10b96e4ef00d; // String | 
+final reasonCodeRequest = ReasonCodeRequest(); // ReasonCodeRequest | 
 
 try {
-    final result = api_instance.apiAdminPromotionChannelsApprovalsGet();
-    print(result);
+    api_instance.apiAdminCommentsIdHidePost(id, reasonCodeRequest);
 } catch (e) {
-    print('Exception when calling CatchenApiApi->apiAdminPromotionChannelsApprovalsGet: $e\n');
+    print('Exception when calling CatchenApiApi->apiAdminCommentsIdHidePost: $e\n');
 }
 
 ```
@@ -64,10 +65,25 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*CatchenApiApi* | [**apiAdminCommentsIdHidePost**](doc//CatchenApiApi.md#apiadmincommentsidhidepost) | **POST** /api/admin/comments/{id}/hide | 
+*CatchenApiApi* | [**apiAdminDraftsIdPublishPost**](doc//CatchenApiApi.md#apiadmindraftsidpublishpost) | **POST** /api/admin/drafts/{id}/publish | 
+*CatchenApiApi* | [**apiAdminDraftsIdSecondaryReviewPost**](doc//CatchenApiApi.md#apiadmindraftsidsecondaryreviewpost) | **POST** /api/admin/drafts/{id}/secondary-review | 
 *CatchenApiApi* | [**apiAdminPromotionChannelsApprovalsGet**](doc//CatchenApiApi.md#apiadminpromotionchannelsapprovalsget) | **GET** /api/admin/promotion-channels/approvals | 
 *CatchenApiApi* | [**apiAdminPromotionChannelsApprovalsPost**](doc//CatchenApiApi.md#apiadminpromotionchannelsapprovalspost) | **POST** /api/admin/promotion-channels/approvals | 
+*CatchenApiApi* | [**apiAdminRecipesIdUnpublishPost**](doc//CatchenApiApi.md#apiadminrecipesidunpublishpost) | **POST** /api/admin/recipes/{id}/unpublish | 
+*CatchenApiApi* | [**apiAdminUsersIdBlockPost**](doc//CatchenApiApi.md#apiadminusersidblockpost) | **POST** /api/admin/users/{id}/block | 
 *CatchenApiApi* | [**apiAuthLoginPost**](doc//CatchenApiApi.md#apiauthloginpost) | **POST** /api/auth/login | 
 *CatchenApiApi* | [**apiAuthRegisterPost**](doc//CatchenApiApi.md#apiauthregisterpost) | **POST** /api/auth/register | 
+*CatchenApiApi* | [**apiCatalogFavoritesGet**](doc//CatchenApiApi.md#apicatalogfavoritesget) | **GET** /api/catalog/favorites | 
+*CatchenApiApi* | [**apiCatalogRecipesGet**](doc//CatchenApiApi.md#apicatalogrecipesget) | **GET** /api/catalog/recipes | 
+*CatchenApiApi* | [**apiCatalogRecipesIdCommentsGet**](doc//CatchenApiApi.md#apicatalogrecipesidcommentsget) | **GET** /api/catalog/recipes/{id}/comments | 
+*CatchenApiApi* | [**apiCatalogRecipesIdCommentsPost**](doc//CatchenApiApi.md#apicatalogrecipesidcommentspost) | **POST** /api/catalog/recipes/{id}/comments | 
+*CatchenApiApi* | [**apiCatalogRecipesIdFavoriteDelete**](doc//CatchenApiApi.md#apicatalogrecipesidfavoritedelete) | **DELETE** /api/catalog/recipes/{id}/favorite | 
+*CatchenApiApi* | [**apiCatalogRecipesIdFavoritePost**](doc//CatchenApiApi.md#apicatalogrecipesidfavoritepost) | **POST** /api/catalog/recipes/{id}/favorite | 
+*CatchenApiApi* | [**apiCatalogRecipesIdGet**](doc//CatchenApiApi.md#apicatalogrecipesidget) | **GET** /api/catalog/recipes/{id} | 
+*CatchenApiApi* | [**apiEditorialDraftsIdPut**](doc//CatchenApiApi.md#apieditorialdraftsidput) | **PUT** /api/editorial/drafts/{id} | 
+*CatchenApiApi* | [**apiEditorialDraftsIdSubmitPost**](doc//CatchenApiApi.md#apieditorialdraftsidsubmitpost) | **POST** /api/editorial/drafts/{id}/submit | 
+*CatchenApiApi* | [**apiEditorialDraftsPost**](doc//CatchenApiApi.md#apieditorialdraftspost) | **POST** /api/editorial/drafts | 
 *CatchenApiApi* | [**apiPolicyPaymentMethodsGet**](doc//CatchenApiApi.md#apipolicypaymentmethodsget) | **GET** /api/policy/payment-methods | 
 *CatchenApiApi* | [**healthzGet**](doc//CatchenApiApi.md#healthzget) | **GET** /healthz | 
 
@@ -78,11 +94,26 @@ Class | Method | HTTP request | Description
  - [ApproveChannelRequest](doc//ApproveChannelRequest.md)
  - [ApprovedChannel](doc//ApprovedChannel.md)
  - [ApprovedChannelsResponse](doc//ApprovedChannelsResponse.md)
+ - [CatalogDetail](doc//CatalogDetail.md)
+ - [CatalogListResponse](doc//CatalogListResponse.md)
+ - [CatalogSummary](doc//CatalogSummary.md)
+ - [CommentCreatedResponse](doc//CommentCreatedResponse.md)
+ - [CommentListResponse](doc//CommentListResponse.md)
+ - [CommentRequest](doc//CommentRequest.md)
+ - [CommentStatus](doc//CommentStatus.md)
+ - [CreateDraftRequest](doc//CreateDraftRequest.md)
+ - [IngredientLine](doc//IngredientLine.md)
  - [LoginEndpointRequest](doc//LoginEndpointRequest.md)
  - [LoginResponse](doc//LoginResponse.md)
  - [PaymentMethodsResponse](doc//PaymentMethodsResponse.md)
+ - [ProvenanceEvidence](doc//ProvenanceEvidence.md)
+ - [Quantity](doc//Quantity.md)
+ - [ReasonCodeRequest](doc//ReasonCodeRequest.md)
+ - [RecipeComment](doc//RecipeComment.md)
+ - [RecipeContent](doc//RecipeContent.md)
  - [RegisterEndpointRequest](doc//RegisterEndpointRequest.md)
  - [RegisterResponse](doc//RegisterResponse.md)
+ - [Substitution](doc//Substitution.md)
 
 
 ## Documentation For Authorization

@@ -1,0 +1,15 @@
+# Generated third-party output: deliberately lenient, standalone (no include
+# of the repo-root options, which require the Flutter SDK). Regenerate via
+# openapi-generator-cli, then `dart format lib` before committing.
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+linter:
+  rules:
+    - prefer_single_quotes
