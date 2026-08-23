@@ -1,3 +1,4 @@
+using Catchen.Editorial.Models;
 using Catchen.Identity.Models;
 
 namespace Catchen.Api.Endpoints;
@@ -22,3 +23,12 @@ public sealed record PaymentMethodsResponse(IReadOnlyList<string> Allowed);
 public sealed record ApprovalResponse(Guid Id);
 
 public sealed record ApprovedChannelsResponse(IReadOnlyList<ApprovedChannel> Approvals);
+
+public sealed record CreateDraftRequest(
+    RecipeContent Content,
+    ProvenanceEvidence Provenance,
+    bool IsFree);
+
+public sealed record CommentRequest(string Text);
+
+public sealed record ReasonCodeRequest(string ReasonCode);

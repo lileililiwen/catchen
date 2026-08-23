@@ -3,10 +3,13 @@ using System.Text;
 using Catchen.Affiliates;
 using Catchen.Api.Endpoints;
 using Catchen.Catalog;
+using Catchen.Catalog.Models;
+using Catchen.Catalog.Services;
 using Catchen.Commerce;
 using Catchen.Data;
 using Catchen.Documents;
 using Catchen.Editorial;
+using Catchen.Editorial.Services;
 using Catchen.Identity;
 using Catchen.Identity.Models;
 using Catchen.Identity.Services;
@@ -136,6 +139,197 @@ app.MapPost("/api/auth/login", async (
         ? Results.Ok(new LoginResponse(result.Token!, result.ExpiresAtUtc!.Value))
         : Results.Unauthorized();
 }).Produces<LoginResponse>(200);
+
+// ---- Catalog (consumer) -------------------------------------------------
+
+CatalogQuery ReadQuery(string? category, string? difficulty, string? ingredient, string? q)
+{
+    CuisineCategory? categoryParsed =
+        Enum.TryParse<CuisineCategory>(category, ignoreCase: true, out var c) ? c : null;
+    RecipeDifficulty? difficultyParsed =
+        Enum.TryParse<RecipeDifficulty>(difficulty, ignoreCase: true, out var d) ? d : null;
+    return new CatalogQuery(categoryParsed, difficultyParsed, ingredient, q);
+}
+
+app.MapGet("/api/catalog/recipes", async (
+    ICatalogService catalog,
+    string? category,
+    string? difficulty,
+    string? ingredient,
+    string? q,
+    CancellationToken ct) =>
+{
+    var items = await catalog.BrowseAsync(ReadQuery(category, difficulty, ingredient, q), ct);
+    return Results.Ok(new { items });
+});
+
+app.MapGet("/api/catalog/recipes/{id:guid}", async (
+    Guid id,
+    ICatalogService catalog,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    Guid? userId = principal.FindFirstValue(ClaimTypes.NameIdentifier) is { } raw
+        ? Guid.Parse(raw)
+        : null;
+    var detail = await catalog.GetDetailAsync(id, userId, ct);
+    return detail is null ? Results.NotFound() : Results.Ok(detail);
+}).AllowAnonymous();
+
+app.MapPost("/api/catalog/recipes/{id:guid}/favorite", async (
+    Guid id,
+    IFavoritesService favorites,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    return await favorites.AddAsync(userId, id, ct) ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization();
+
+app.MapDelete("/api/catalog/recipes/{id:guid}/favorite", async (
+    Guid id,
+    IFavoritesService favorites,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    return await favorites.RemoveAsync(userId, id, ct) ? Results.NoContent() : Results.NotFound();
+}).RequireAuthorization();
+
+app.MapGet("/api/catalog/favorites", async (
+    IFavoritesService favorites,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    return Results.Ok(new { items = await favorites.ListMineAsync(userId, ct) });
+}).RequireAuthorization();
+
+app.MapPost("/api/catalog/recipes/{id:guid}/comments", async (
+    Guid id,
+    CommentRequest request,
+    ICommentsService comments,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await comments.AddAsync(userId, id, request.Text, ct);
+    return result.Succeeded
+        ? Results.Created($"/api/catalog/recipes/{id}/comments", new { id = result.CommentId })
+        : Results.UnprocessableEntity(new { violation = result.Violation });
+}).RequireAuthorization();
+
+app.MapGet("/api/catalog/recipes/{id:guid}/comments", async (
+    Guid id, ICommentsService comments, CancellationToken ct) =>
+    Results.Ok(new { comments = await comments.ListVisibleAsync(id, ct) }))
+    .AllowAnonymous();
+
+// ---- Editorial workflow (staff) -----------------------------------------
+
+app.MapPost("/api/editorial/drafts", async (
+    CreateDraftRequest request,
+    IEditorialWorkflowService editorial,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var role = principal.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+    var result = await editorial.CreateDraftAsync(
+        userId, role, request.Content, request.Provenance, request.IsFree, ct);
+    return ToWorkflowHttp(result, "/api/editorial/drafts");
+}).RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+app.MapPut("/api/editorial/drafts/{id:guid}", async (
+    Guid id,
+    CreateDraftRequest request,
+    IEditorialWorkflowService editorial,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await editorial.UpdateDraftAsync(id, userId, request.Content, request.Provenance, request.IsFree, ct);
+    return ToWorkflowHttp(result, "/api/editorial/drafts");
+}).RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+app.MapPost("/api/editorial/drafts/{id:guid}/submit", async (
+    Guid id,
+    IEditorialWorkflowService editorial,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await editorial.SubmitAsync(id, userId, ct);
+    return ToWorkflowHttp(result, "/api/editorial/drafts");
+}).RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+app.MapPost("/api/admin/drafts/{id:guid}/secondary-review", async (
+    Guid id,
+    IEditorialWorkflowService editorial,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await editorial.RecordSecondaryReviewAsync(id, userId, ct);
+    return ToWorkflowHttp(result, "/api/editorial/drafts");
+}).RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+app.MapPost("/api/admin/drafts/{id:guid}/publish", async (
+    Guid id,
+    IEditorialWorkflowService editorial,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var role = principal.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+    var result = await editorial.PublishAsync(id, userId, role, ct);
+    return ToWorkflowHttp(result, "/api/catalog/recipes");
+}).RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+app.MapPost("/api/admin/recipes/{id:guid}/unpublish", async (
+    Guid id,
+    IEditorialWorkflowService editorial,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var role = principal.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+    var result = await editorial.UnpublishAsync(id, userId, role, ct);
+    return ToWorkflowHttp(result, "/api/catalog/recipes");
+}).RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+// ---- Moderation (administrator) -----------------------------------------
+
+app.MapPost("/api/admin/comments/{id:guid}/hide", async (
+    Guid id,
+    ReasonCodeRequest request,
+    ICommentsService comments,
+    CancellationToken ct) =>
+    await comments.HideAsync(id, request.ReasonCode, ct) ? Results.NoContent() : Results.NotFound())
+    .RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+app.MapPost("/api/admin/users/{id:guid}/block", async (
+    Guid id,
+    ReasonCodeRequest request,
+    ICommentsService comments,
+    CancellationToken ct) =>
+    await comments.BlockUserAsync(id, request.ReasonCode, ct) ? Results.NoContent() : Results.NotFound())
+    .RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+static IResult ToWorkflowHttp(WorkflowResult result, string locationBase)
+{
+    if (result.Succeeded)
+    {
+        return Results.Created($"{locationBase}/{result.DraftId}", new
+        {
+            draftId = result.DraftId,
+            publishedRecipeId = result.PublishedRecipeId,
+        });
+    }
+
+    return result.Violation!.StartsWith("forbidden_role", StringComparison.Ordinal)
+        ? Results.Forbid()
+        : Results.UnprocessableEntity(new { violation = result.Violation });
+}
 
 app.MapGet("/api/policy/payment-methods", (IChannelPolicyService channels) => Results.Ok(
     new PaymentMethodsResponse(channels.AllowedPaymentMethods())))

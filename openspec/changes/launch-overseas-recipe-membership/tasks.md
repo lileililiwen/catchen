@@ -14,9 +14,9 @@
 
 ## 2. Recipe Catalog and Operations
 
-- [ ] 2.1 Implement structured draft and immutable published recipe models with taxonomy and versioning.
-- [ ] 2.2 Implement deterministic content validation for quantities, units, substitutions, equipment, cultural context, and provenance.
-- [ ] 2.3 Implement author/reviewer workflow, secondary usability review, publish/unpublish, and evidence audit trails.
+- [x] 2.1 Implement structured draft and immutable published recipe models with taxonomy and versioning.
+- [x] 2.2 Implement deterministic content validation for quantities, units, substitutions, equipment, cultural context, and provenance.
+- [x] 2.3 Implement author/reviewer workflow, secondary usability review, publish/unpublish, and evidence audit trails.
 - [ ] 2.4 Implement catalog browse/search/filter, entitlement-aware detail, favorites, comments, and moderation.
 
 ## 3. Commerce and Documents
