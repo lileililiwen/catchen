@@ -21,18 +21,26 @@ Future<void> main() async {
 }
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  const MainApp({super.key, this.loginApi, this.channelsApi});
+
+  final CatchenApiApi? loginApi;
+  final CatchenApiApi? channelsApi;
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: AuthGate());
+    return MaterialApp(
+      home: AuthGate(loginApi: loginApi, channelsApi: channelsApi),
+    );
   }
 }
 
 /// Role-aware gate: only administrators reach the operations console;
 /// regular users get an explicit access-denied screen.
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key});
+  const AuthGate({super.key, this.loginApi, this.channelsApi});
+
+  final CatchenApiApi? loginApi;
+  final CatchenApiApi? channelsApi;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -43,16 +51,22 @@ class _AuthGateState extends State<AuthGate> {
   Widget build(BuildContext context) {
     final session = Session.current;
     if (session is! Session) {
-      return const LoginScreen();
+      return LoginScreen(
+        api: widget.loginApi,
+        onSignedIn: (session) => setState(() => Session.current = session),
+      );
     }
     return session.isAdministrator
-        ? ChannelsScreen(session: session)
+        ? ChannelsScreen(session: session, api: widget.channelsApi)
         : const AccessDeniedScreen();
   }
 }
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.api, required this.onSignedIn});
+
+  final CatchenApiApi? api;
+  final void Function(Session session) onSignedIn;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -71,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final response = await createApi().apiAuthLoginPost(
+      final response = await (widget.api ?? createApi()).apiAuthLoginPost(
         LoginEndpointRequest(
           email: _email.text.trim(),
           password: _password.text,
@@ -92,15 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      Session.current = session;
-      setState(() => _busy = false);
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => session.isAdministrator
-              ? ChannelsScreen(session: session)
-              : const AccessDeniedScreen(),
-        ),
-      );
+      widget.onSignedIn(session);
     } catch (error) {
       if (!mounted) {
         return;
@@ -167,9 +173,10 @@ class AccessDeniedScreen extends StatelessWidget {
 }
 
 class ChannelsScreen extends StatefulWidget {
-  const ChannelsScreen({required this.session, super.key});
+  const ChannelsScreen({required this.session, super.key, this.api});
 
   final Session session;
+  final CatchenApiApi? api;
 
   @override
   State<ChannelsScreen> createState() => _ChannelsScreenState();
@@ -179,6 +186,9 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
   List<ApprovedChannel>? _approvals;
   String? _message;
 
+  CatchenApiApi get _api =>
+      widget.api ?? createApi(bearerToken: widget.session.token);
+
   @override
   void initState() {
     super.initState();
@@ -187,8 +197,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
 
   Future<void> _reload() async {
     try {
-      final response = await createApi(bearerToken: widget.session.token)
-          .apiAdminPromotionChannelsApprovalsGet();
+      final response = await _api.apiAdminPromotionChannelsApprovalsGet();
       if (!mounted) {
         return;
       }
@@ -206,10 +215,9 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
 
   Future<void> _approve(String channel, String kind) async {
     try {
-      await createApi(bearerToken: widget.session.token)
-          .apiAdminPromotionChannelsApprovalsPost(
-            ApproveChannelRequest(channel: channel.trim(), kind: kind),
-          );
+      await _api.apiAdminPromotionChannelsApprovalsPost(
+        ApproveChannelRequest(channel: channel.trim(), kind: kind),
+      );
       await _reload();
     } on ApiException catch (exception) {
       if (!mounted) {
@@ -321,6 +329,7 @@ class _ChannelsScreenState extends State<ChannelsScreen> {
           ),
           FilledButton(
             onPressed: () {
+              debugPrint('APPROVE_PRESSED text=${channelController.text}');
               Navigator.pop(dialogContext);
               if (channelController.text.trim().isNotEmpty) {
                 _approve(channelController.text, kind);

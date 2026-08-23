@@ -23,18 +23,22 @@ void main() {
 }
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  const MainApp({super.key, this.loginApi});
+
+  final CatchenApiApi? loginApi;
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: AuthGate());
+    return MaterialApp(home: AuthGate(loginApi: loginApi));
   }
 }
 
 /// Role-aware gate: signed-in consumers land on the home screen; everyone
 /// else sees the login form.
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key});
+  const AuthGate({super.key, this.loginApi});
+
+  final CatchenApiApi? loginApi;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -46,12 +50,14 @@ class _AuthGateState extends State<AuthGate> {
     final session = Session.current;
     return session is Session
         ? HomeScreen(session: session)
-        : const LoginScreen();
+        : LoginScreen(api: widget.loginApi);
   }
 }
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.api});
+
+  final CatchenApiApi? api;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -70,7 +76,8 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final response = await createApi().apiAuthLoginPost(
+      final api = widget.api ?? createApi();
+      final response = await api.apiAuthLoginPost(
         LoginEndpointRequest(
           email: _email.text.trim(),
           password: _password.text,
@@ -82,6 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) {
         return;
       }
+
       if (session is! Session) {
         setState(() {
           _error = 'Sign-in failed. Check your credentials.';
