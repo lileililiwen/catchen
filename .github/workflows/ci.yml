@@ -139,7 +139,7 @@ jobs:
           status=0
           for dir in "${dirs[@]}"; do
             echo "### Flutter workspace: $dir"
-            flutter pub get "$dir" || status=1
+            (cd "$dir" && flutter pub get) || status=1
             dart format --set-exit-if-changed --output=none "$dir" || status=1
             flutter analyze "$dir" || status=1
             (cd "$dir" && bash "$GITHUB_WORKSPACE/scripts/audit_pub_packages.sh") || status=1
