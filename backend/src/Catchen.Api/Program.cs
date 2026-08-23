@@ -32,7 +32,10 @@ app.MapGet("/healthz", (DatabaseProviderSelector selector) => Results.Ok(new
 
 await app.RunAsync();
 
-/// <summary>Exposes the implicit Program class for integration-test hosts.</summary>
-public static partial class Program
+/// <summary>
+/// Exposes the implicit Program class for integration-test hosts
+/// (WebApplicationFactory requires a non-static type parameter).
+/// </summary>
+public partial class Program
 {
 }

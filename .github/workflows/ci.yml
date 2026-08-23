@@ -33,6 +33,14 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Cache NuGet packages
+        if: steps.sln.outputs.path != ''
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/**/*.csproj', 'Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
       - name: Restore
         if: steps.sln.outputs.path != ''
         run: dotnet restore "${{ steps.sln.outputs.path }}"

@@ -129,6 +129,13 @@ dotnet_diagnostic.CA1861.severity = none
 dotnet_diagnostic.S1186.severity = none
 
 # ----------------------------------------------------------------------
+# API entry point — Program must stay non-static so WebApplicationFactory
+# can use it as a generic type argument in integration tests (S1118).
+# ----------------------------------------------------------------------
+[**/src/Catchen.Api/Program.cs]
+dotnet_diagnostic.S1118.severity = none
+
+# ----------------------------------------------------------------------
 # xUnit test code — test method names follow the underscore convention
 # (Method_State_Expectation); CA1707 is structurally inapplicable here.
 # ----------------------------------------------------------------------
