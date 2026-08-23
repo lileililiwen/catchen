@@ -1,6 +1,8 @@
+using Catchen.Affiliates.Services;
 using Catchen.Catalog.Models;
 using Catchen.Catalog.Services;
 using Catchen.Commerce.Models;
+using Catchen.Commerce.Services;
 using Catchen.Editorial.Models;
 using Catchen.Identity.Models;
 
@@ -37,6 +39,16 @@ public sealed record CommentRequest(string Text);
 public sealed record ReasonCodeRequest(string ReasonCode);
 
 public sealed record ShoppingListRequest(IReadOnlyList<Guid> RecipeIds);
+
+public sealed record RegisterMerchantRequest(
+    string Slug,
+    string DisplayName,
+    string BaseUrl,
+    string AttributionTag);
+
+public sealed record CommissionImportRequest(
+    string Provider,
+    IReadOnlyList<CommissionImportRow> Rows);
 
 public sealed record CatalogListResponse(IReadOnlyList<CatalogSummary> Items);
 

@@ -35,6 +35,9 @@ public interface ICommentsService
     Task<bool> BlockUserAsync(Guid userId, string reasonCode, CancellationToken cancellationToken = default);
 
     Task<bool> IsUserBlockedAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Moderation workload counters (task 4.2).</summary>
+    Task<(int Visible, int Hidden)> CountsAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class CommentsService(DbContext db, TimeProvider clock) : ICommentsService
@@ -134,5 +137,13 @@ public sealed class CommentsService(DbContext db, TimeProvider clock) : IComment
     {
         return await db.Set<RecipeComment>().AnyAsync(
             c => c.UserId == userId && c.ModerationReason == "user_blocked", cancellationToken);
+    }
+
+    public async Task<(int Visible, int Hidden)> CountsAsync(CancellationToken cancellationToken = default)
+    {
+        var rows = await db.Set<RecipeComment>().AsNoTracking().ToListAsync(cancellationToken);
+        return (
+            rows.Count(c => c.Status == CommentStatus.Visible),
+            rows.Count(c => c.Status == CommentStatus.Hidden));
     }
 }

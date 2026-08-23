@@ -27,11 +27,14 @@
   - Provider-neutral CheckoutService creates Pending orders with synthetic session references; entitlements change only via verified events. Real gateway HTTP adapters land when provider keys are configured (deployment task).
 - [x] 3.3 Implement versioned recipe PDFs and aggregated shopping-list PDFs with accessibility and entitlement tests.
   - QuestPDF composers; server-side entitlement gate before rendering; locked recipes excluded from aggregates; version stamped in filename.
-- [ ] 3.4 Implement order reconciliation, refunds, and administrative reporting.
+- [x] 3.4 Implement order reconciliation, refunds, and administrative reporting.
+  - Webhook-driven refund/dispute transitions reconcile orders; admin order report filters by period/provider/currency/status with paid totals; moderation and publication-status counters for ops.
 
 ## 4. Affiliates and Verification
 
-- [ ] 4.1 Implement allowlisted disclosed affiliate redirects, privacy-minimized click attribution, and commission statement import.
-- [ ] 4.2 Add operational dashboards and exports for content, moderation, orders, and affiliate results.
+- [x] 4.1 Implement allowlisted disclosed affiliate redirects, privacy-minimized click attribution, and commission statement import.
+  - /go/{slug} redirect only to registered HTTPS overseas merchants (domestic slugs prohibited+audited); salted daily pseudonym clicks; commission import validates/dedupes/reports.
+- [x] 4.2 Add operational dashboards and exports for content, moderation, orders, and affiliate results.
+  - Admin JSON report endpoints: orders (period/provider/currency/status), moderation counters, publication status counts, accepted commission rows. UI dashboards land with the ops console screens.
 - [ ] 4.3 Add automated unit, integration, contract, security, accessibility, and end-to-end tests for every specification scenario.
 - [ ] 4.4 Complete offshore legal, privacy, copyright, tax, app-store, and payment-provider launch reviews.

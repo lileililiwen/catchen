@@ -24,6 +24,7 @@ public static class CommerceModuleExtensions
         services.AddScoped<IEntitlementLedger, EntitlementLedger>();
         services.AddScoped<IWebhookInboxService, WebhookInboxService>();
         services.AddScoped<ICheckoutService, CheckoutService>();
+        services.AddScoped<IOrderReportingService, OrderReportingService>();
 
         // Commerce fulfills the catalog's entitlement seam (replaces the
         // pre-commerce NoEntitlementProvider registration).
