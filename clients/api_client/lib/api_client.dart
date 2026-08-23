@@ -237,16 +237,46 @@ class ApiClient {
           return ApprovedChannel.fromJson(value);
         case 'ApprovedChannelsResponse':
           return ApprovedChannelsResponse.fromJson(value);
+        case 'CatalogDetail':
+          return CatalogDetail.fromJson(value);
+        case 'CatalogListResponse':
+          return CatalogListResponse.fromJson(value);
+        case 'CatalogSummary':
+          return CatalogSummary.fromJson(value);
+        case 'CommentCreatedResponse':
+          return CommentCreatedResponse.fromJson(value);
+        case 'CommentListResponse':
+          return CommentListResponse.fromJson(value);
+        case 'CommentRequest':
+          return CommentRequest.fromJson(value);
+        case 'CommentStatus':
+          return CommentStatusTypeTransformer().decode(value);
+        case 'CreateDraftRequest':
+          return CreateDraftRequest.fromJson(value);
+        case 'IngredientLine':
+          return IngredientLine.fromJson(value);
         case 'LoginEndpointRequest':
           return LoginEndpointRequest.fromJson(value);
         case 'LoginResponse':
           return LoginResponse.fromJson(value);
         case 'PaymentMethodsResponse':
           return PaymentMethodsResponse.fromJson(value);
+        case 'ProvenanceEvidence':
+          return ProvenanceEvidence.fromJson(value);
+        case 'Quantity':
+          return Quantity.fromJson(value);
+        case 'ReasonCodeRequest':
+          return ReasonCodeRequest.fromJson(value);
+        case 'RecipeComment':
+          return RecipeComment.fromJson(value);
+        case 'RecipeContent':
+          return RecipeContent.fromJson(value);
         case 'RegisterEndpointRequest':
           return RegisterEndpointRequest.fromJson(value);
         case 'RegisterResponse':
           return RegisterResponse.fromJson(value);
+        case 'Substitution':
+          return Substitution.fromJson(value);
         default:
           dynamic match;
           if (value is List &&

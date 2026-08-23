@@ -1,3 +1,5 @@
+using Catchen.Catalog.Models;
+using Catchen.Catalog.Services;
 using Catchen.Editorial.Models;
 using Catchen.Identity.Models;
 
@@ -32,3 +34,11 @@ public sealed record CreateDraftRequest(
 public sealed record CommentRequest(string Text);
 
 public sealed record ReasonCodeRequest(string ReasonCode);
+
+public sealed record CatalogListResponse(IReadOnlyList<CatalogSummary> Items);
+
+public sealed record CommentListResponse(IReadOnlyList<RecipeComment> Comments);
+
+public sealed record CommentCreatedResponse(Guid Id);
+
+public sealed record WorkflowCreatedResponse(Guid? DraftId, Guid? PublishedRecipeId);

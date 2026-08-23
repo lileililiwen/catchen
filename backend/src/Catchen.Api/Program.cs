@@ -160,8 +160,8 @@ app.MapGet("/api/catalog/recipes", async (
     CancellationToken ct) =>
 {
     var items = await catalog.BrowseAsync(ReadQuery(category, difficulty, ingredient, q), ct);
-    return Results.Ok(new { items });
-});
+    return Results.Ok(new CatalogListResponse(items));
+}).Produces<CatalogListResponse>(200);
 
 app.MapGet("/api/catalog/recipes/{id:guid}", async (
     Guid id,
@@ -174,7 +174,9 @@ app.MapGet("/api/catalog/recipes/{id:guid}", async (
         : null;
     var detail = await catalog.GetDetailAsync(id, userId, ct);
     return detail is null ? Results.NotFound() : Results.Ok(detail);
-}).AllowAnonymous();
+})
+.Produces<CatalogDetail>(200)
+.AllowAnonymous();
 
 app.MapPost("/api/catalog/recipes/{id:guid}/favorite", async (
     Guid id,
@@ -202,8 +204,10 @@ app.MapGet("/api/catalog/favorites", async (
     CancellationToken ct) =>
 {
     var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
-    return Results.Ok(new { items = await favorites.ListMineAsync(userId, ct) });
-}).RequireAuthorization();
+    return Results.Ok(new CatalogListResponse(await favorites.ListMineAsync(userId, ct)));
+})
+.Produces<CatalogListResponse>(200)
+.RequireAuthorization();
 
 app.MapPost("/api/catalog/recipes/{id:guid}/comments", async (
     Guid id,
@@ -215,13 +219,16 @@ app.MapPost("/api/catalog/recipes/{id:guid}/comments", async (
     var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var result = await comments.AddAsync(userId, id, request.Text, ct);
     return result.Succeeded
-        ? Results.Created($"/api/catalog/recipes/{id}/comments", new { id = result.CommentId })
+        ? Results.Created($"/api/catalog/recipes/{id}/comments", new CommentCreatedResponse(result.CommentId!.Value))
         : Results.UnprocessableEntity(new { violation = result.Violation });
-}).RequireAuthorization();
+})
+.Produces<CommentCreatedResponse>(201)
+.RequireAuthorization();
 
 app.MapGet("/api/catalog/recipes/{id:guid}/comments", async (
-    Guid id, ICommentsService comments, CancellationToken ct) =>
-    Results.Ok(new { comments = await comments.ListVisibleAsync(id, ct) }))
+    Guid id, ICommentsService comments, CancellationToken ct) => Results.Ok(
+        new CommentListResponse(await comments.ListVisibleAsync(id, ct))))
+    .Produces<CommentListResponse>(200)
     .AllowAnonymous();
 
 // ---- Editorial workflow (staff) -----------------------------------------
@@ -319,11 +326,9 @@ static IResult ToWorkflowHttp(WorkflowResult result, string locationBase)
 {
     if (result.Succeeded)
     {
-        return Results.Created($"{locationBase}/{result.DraftId}", new
-        {
-            draftId = result.DraftId,
-            publishedRecipeId = result.PublishedRecipeId,
-        });
+        return Results.Created(
+            $"{locationBase}/{result.DraftId}",
+            new WorkflowCreatedResponse(result.DraftId, result.PublishedRecipeId));
     }
 
     return result.Violation!.StartsWith("forbidden_role", StringComparison.Ordinal)

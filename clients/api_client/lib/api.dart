@@ -34,11 +34,26 @@ part 'model/approval_response.dart';
 part 'model/approve_channel_request.dart';
 part 'model/approved_channel.dart';
 part 'model/approved_channels_response.dart';
+part 'model/catalog_detail.dart';
+part 'model/catalog_list_response.dart';
+part 'model/catalog_summary.dart';
+part 'model/comment_created_response.dart';
+part 'model/comment_list_response.dart';
+part 'model/comment_request.dart';
+part 'model/comment_status.dart';
+part 'model/create_draft_request.dart';
+part 'model/ingredient_line.dart';
 part 'model/login_endpoint_request.dart';
 part 'model/login_response.dart';
 part 'model/payment_methods_response.dart';
+part 'model/provenance_evidence.dart';
+part 'model/quantity.dart';
+part 'model/reason_code_request.dart';
+part 'model/recipe_comment.dart';
+part 'model/recipe_content.dart';
 part 'model/register_endpoint_request.dart';
 part 'model/register_response.dart';
+part 'model/substitution.dart';
 
 /// An [ApiClient] instance that uses the default values obtained from
 /// the OpenAPI specification file.
