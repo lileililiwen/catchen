@@ -39,6 +39,10 @@ public static class DataExtensions
             }
         });
 
+        // Module services inject the BASE DbContext (Agents.md §2); forward to
+        // the scoped AppDbContext so both resolve to the same instance.
+        services.AddScoped<DbContext>(sp => sp.GetRequiredService<AppDbContext>());
+
         return services;
     }
 }

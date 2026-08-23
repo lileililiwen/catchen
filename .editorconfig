@@ -22,7 +22,14 @@ indent_size = 4
 dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 
-# Naming — fields
+# Naming — constants first (first-match wins), then fields
+dotnet_naming_rule.constants_should_be_pascal_case.severity = error
+dotnet_naming_rule.constants_should_be_pascal_case.symbols = constants
+dotnet_naming_rule.constants_should_be_pascal_case.style = pascal_case_style
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
+dotnet_naming_style.pascal_case_style.capitalization = pascal_case
+
 dotnet_naming_rule.private_fields_should_be_camel_case.severity = error
 dotnet_naming_rule.private_fields_should_be_camel_case.symbols = private_fields
 dotnet_naming_rule.private_fields_should_be_camel_case.style = camel_case_underscore
