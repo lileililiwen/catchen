@@ -1,6 +1,10 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
+# Git hooks do not inherit a login shell's PATH; resolve the user-local
+# toolchains explicitly (kept in sync with ~/.bash_profile).
+export PATH="$HOME/flutter/bin:$HOME/.dotnet:$PATH"
+
 # Fast local format check on staged files only.
 # CI (dotnet format / dart format on the whole tree) is the authoritative
 # gate; this hook gives instant feedback before commit. Both checks no-op

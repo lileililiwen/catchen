@@ -1,6 +1,10 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
+# Git hooks do not inherit a login shell's PATH; resolve the user-local
+# toolchains explicitly (kept in sync with ~/.bash_profile).
+export PATH="$HOME/flutter/bin:$HOME/.dotnet:$PATH"
+
 # Fast local build gate before pushing; same warnings-as-errors setting as CI.
 # No-ops until the backend solution scaffold exists (platform-foundation task).
 # Serialize MSBuild and avoid persistent build servers so the full solution is

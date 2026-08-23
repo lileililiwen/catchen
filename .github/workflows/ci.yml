@@ -76,7 +76,11 @@ jobs:
         # coverage (test projects, EF migrations, and generated code excluded).
         # Only evaluated on pull requests, where the base ref exists.
         if: github.event_name == 'pull_request' && steps.sln.outputs.path != ''
-        run: python3 scripts/check_incremental_coverage.py --base origin/main --threshold 0.80 --reports 'TestResults/**/coverage.opencover.xml'
+        run: >
+          python3 scripts/check_incremental_coverage.py --base origin/main
+          --threshold 0.80
+          --reports 'backend/TestResults/**/coverage.opencover.xml'
+          --lcov-reports 'clients/**/coverage/lcov.info'
 
       - name: Upload coverage reports
         if: always()
@@ -109,46 +113,36 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Locate client workspace
+      - name: Locate client workspaces
         id: ws
         shell: bash
         run: |
-          path=$(find . -maxdepth 3 -name pubspec.yaml -not -path '*/build/*' | head -n 1 || true)
-          dir="."
-          [ -n "$path" ] && dir="$(dirname "$path")"
+          mapfile -t dirs < <(find . -maxdepth 3 -name pubspec.yaml -not -path '*/build/*' -exec dirname {} \; | sort)
           {
-            echo "path=$path"
-            echo "dir=$dir"
+            echo "list=$(IFS='|'; echo "${dirs[*]}")"
           } >> "$GITHUB_OUTPUT"
 
       - name: Setup Flutter
-        if: steps.ws.outputs.path != ''
+        if: steps.ws.outputs.list != ''
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      - name: Pub get
-        if: steps.ws.outputs.path != ''
-        working-directory: ${{ steps.ws.outputs.dir }}
-        run: flutter pub get
-
-      - name: Dart format verify
-        if: steps.ws.outputs.path != ''
-        working-directory: ${{ steps.ws.outputs.dir }}
-        run: dart format --set-exit-if-changed --output=none .
-
-      - name: Analyze
-        if: steps.ws.outputs.path != ''
-        working-directory: ${{ steps.ws.outputs.dir }}
-        run: flutter analyze
-
-      - name: Pub dependency audit
-        if: steps.ws.outputs.path != ''
-        working-directory: ${{ steps.ws.outputs.dir }}
-        run: bash "$GITHUB_WORKSPACE/scripts/audit_pub_packages.sh"
-
-      - name: Test (with coverage)
-        if: steps.ws.outputs.path != ''
-        working-directory: ${{ steps.ws.outputs.dir }}
-        run: flutter test --coverage
+      # Every client workspace (consumer, ops, ...) gets the full local gate
+      # sequence; any workspace failure fails the job.
+      - name: Pub get, format, analyze, audit, test (per workspace)
+        if: steps.ws.outputs.list != ''
+        shell: bash
+        run: |
+          IFS='|' read -ra dirs <<< "${{ steps.ws.outputs.list }}"
+          status=0
+          for dir in "${dirs[@]}"; do
+            echo "### Flutter workspace: $dir"
+            flutter pub get "$dir" || status=1
+            dart format --set-exit-if-changed --output=none "$dir" || status=1
+            flutter analyze "$dir" || status=1
+            (cd "$dir" && bash "$GITHUB_WORKSPACE/scripts/audit_pub_packages.sh") || status=1
+            (cd "$dir" && flutter test --coverage) || status=1
+          done
+          exit $status

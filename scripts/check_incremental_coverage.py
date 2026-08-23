@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
 """Incremental coverage gate for pull requests.
 
-Compares the executable lines added by a PR (git diff) against the OpenCover
-coverage reports produced by `dotnet test --collect:"XPlat Code Coverage"` and
-fails when the covered fraction of NEW lines is below a threshold. Overall
-coverage is printed for information but never gates.
+Compares the executable lines added by a PR (git diff) against coverage
+reports produced by the test suites and fails when the covered fraction of
+NEW lines is below a threshold. Overall coverage is printed for information
+but never gates.
 
-Excluded from the gate: test projects, EF migrations, and generated code.
+Supported report formats:
+- OpenCover XML (.NET, via `dotnet test --collect:"XPlat Code Coverage"`)
+- lcov (Flutter/Dart, via `flutter test --coverage`)
+
+Excluded from the gate: test projects/tests dirs, EF migrations, generated
+code (*.g.cs, *.g.cs, *.g.dart, *.freezed.dart), build artifacts.
 
 Usage:
     python3 scripts/check_incremental_coverage.py \
         --base origin/main --threshold 0.80 \
-        --reports "TestResults/**/coverage.opencover.xml"
+        --reports "TestResults/**/coverage.opencover.xml" \
+        --lcov-reports "clients/**/coverage/lcov.info"
 
 Exit codes: 0 = pass (or base ref unavailable), 1 = gate red.
 """
@@ -28,12 +34,23 @@ import xml.etree.ElementTree as ET
 EXCLUDE_SUBSTRINGS = (
     "/tests/",
     "\\tests\\",
+    "/test/",
+    "\\test\\",
     "/Migrations/",
     "\\Migrations\\",
     "/obj/",
     "\\obj\\",
+    "/build/",
+    "\\build\\",
 )
-EXCLUDE_SUFFIXES = (".Designer.cs", ".g.cs")
+EXCLUDE_SUFFIXES = (
+    ".Designer.cs",
+    ".g.cs",
+    ".g.dart",
+    ".freezed.dart",
+)
+
+DIFF_PATHSPECS = ("*.cs", "*.dart")
 
 
 def parse_args() -> argparse.Namespace:
@@ -42,14 +59,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--threshold", type=float, default=0.80, help="minimum new-line coverage ratio")
     parser.add_argument("--reports", default="TestResults/**/coverage.opencover.xml",
                         help="glob of OpenCover XML reports to merge")
+    parser.add_argument("--lcov-reports", default="",
+                        help="optional glob of lcov.info reports (Flutter/Dart) to merge")
     return parser.parse_args()
 
 
 def is_excluded(path: str) -> bool:
     normalized = path.replace("\\", "/")
-    if any(s in normalized for s in ("/tests/", "/Migrations/", "/obj/")):
+    if any(s in normalized for s in EXCLUDE_SUBSTRINGS):
         return True
-    return normalized.endswith((".Designer.cs", ".g.cs"))
+    return normalized.endswith(EXCLUDE_SUFFIXES)
 
 
 def added_lines(base: str) -> dict[str, set[int]] | None:
@@ -59,11 +78,12 @@ def added_lines(base: str) -> dict[str, set[int]] | None:
     case the gate is skipped rather than failed.
     """
     if subprocess.run(["git", "rev-parse", "--verify", "--quiet", base],
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                       check=False).returncode != 0:
         return None
 
     proc = subprocess.run(
-        ["git", "diff", "--unified=0", f"{base}...HEAD", "--", "*.cs"],
+        ["git", "diff", "--unified=0", f"{base}...HEAD", "--", *DIFF_PATHSPECS],
         capture_output=True, text=True, check=True)
 
     changed: dict[str, set[int]] = {}
@@ -86,13 +106,15 @@ def added_lines(base: str) -> dict[str, set[int]] | None:
     return changed
 
 
-def parse_reports(patterns: str) -> tuple[dict[str, dict[int, bool]], int, int]:
-    """Return (file -> {line: covered}, totalLines, coveredLines) merged across reports."""
+def parse_opencover(patterns: str) -> tuple[dict[str, dict[int, bool]], int, int]:
+    """Merge OpenCover XML reports -> (file -> {line: covered}, total, covered)."""
     files_by_uid: dict[str, str] = {}
     per_file: dict[str, dict[int, bool]] = {}
     total = 0
     covered = 0
     for pattern in patterns.split(";"):
+        if not pattern:
+            continue
         for path in glob.glob(pattern, recursive=True):
             tree = ET.parse(path)
             root = tree.getroot()
@@ -113,6 +135,62 @@ def parse_reports(patterns: str) -> tuple[dict[str, dict[int, bool]], int, int]:
     return per_file, total, covered
 
 
+def package_prefix(lcov_path: str) -> str:
+    """lcov SF paths are relative to their package root; recover it from the
+    conventional `<package>/coverage/lcov.info` location."""
+    normalized = lcov_path.replace("\\", "/")
+    marker = "/coverage/"
+    index = normalized.rfind(marker)
+    return normalized[:index] if index != -1 else ""
+
+
+def parse_lcov(patterns: str) -> tuple[dict[str, dict[int, bool]], int, int]:
+    """Merge lcov reports -> (file -> {line: covered}, total, covered)."""
+    per_file: dict[str, dict[int, bool]] = {}
+    total = 0
+    covered = 0
+    for pattern in patterns.split(";"):
+        if not pattern:
+            continue
+        for path in glob.glob(pattern, recursive=True):
+            prefix = package_prefix(path)
+            current: str | None = None
+            with open(path, encoding="utf-8") as handle:
+                for raw in handle:
+                    line = raw.strip()
+                    if line.startswith("SF:"):
+                        source = line[3:].replace("\\", "/")
+                        current = os.path.abspath(os.path.join(prefix, source))
+                        per_file.setdefault(current, {})
+                    elif line.startswith("DA:") and current is not None:
+                        parts = line[3:].split(",")
+                        line_no = int(parts[0])
+                        hits = int(parts[1]) if len(parts) > 1 else 0
+                        bucket = per_file[current]
+                        bucket[line_no] = bucket.get(line_no, False) or hits > 0
+                        total += 1
+                        if hits > 0:
+                            covered += 1
+                    # 'end_of_record' and other sections are ignored.
+    return per_file, total, covered
+
+
+def merge(
+    *report_sets: tuple[dict[str, dict[int, bool]], int, int],
+) -> tuple[dict[str, dict[int, bool]], int, int]:
+    per_file: dict[str, dict[int, bool]] = {}
+    total = 0
+    covered = 0
+    for files, set_total, set_covered in report_sets:
+        for path, lines in files.items():
+            bucket = per_file.setdefault(path, {})
+            for line_no, hit in lines.items():
+                bucket[line_no] = bucket.get(line_no, False) or hit
+        total += set_total
+        covered += set_covered
+    return per_file, total, covered
+
+
 def main() -> int:
     args = parse_args()
     changed = added_lines(args.base)
@@ -120,7 +198,10 @@ def main() -> int:
         print(f"[coverage-gate] base ref '{args.base}' not found; incremental gate skipped.")
         return 0
 
-    per_file, total_lines, covered_lines = parse_reports(args.reports)
+    per_file, total_lines, covered_lines = merge(
+        parse_opencover(args.reports),
+        parse_lcov(args.lcov_reports),
+    )
 
     executable = 0
     covered_new = 0
