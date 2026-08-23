@@ -50,6 +50,39 @@ builder.Services
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Catchen API",
+        Version = "v1",
+        Description = "Offshore-only cooking platform: recipes, memberships, operations.",
+    });
+
+    // Bearer scheme so generated clients attach the JWT on secured calls.
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Paste the JWT from /api/auth/login.",
+    });
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer",
+                },
+            },
+            Array.Empty<string>()
+        },
+    });
+});
 
 var app = builder.Build();
 
@@ -89,9 +122,9 @@ app.MapPost("/api/auth/register", async (
         http.Request.Headers.UserAgent.ToString()), cancellationToken);
 
     return result.Succeeded
-        ? Results.Created($"/api/users/{result.UserId}", new { userId = result.UserId })
+        ? Results.Created($"/api/users/{result.UserId}", new RegisterResponse(result.UserId!.Value))
         : Results.BadRequest(new { violations = result.Violations });
-});
+}).Produces<RegisterResponse>(201);
 
 app.MapPost("/api/auth/login", async (
     LoginEndpointRequest request,
@@ -100,14 +133,13 @@ app.MapPost("/api/auth/login", async (
 {
     var result = await accounts.AuthenticateAsync(request.Email, request.Password, cancellationToken);
     return result.Succeeded
-        ? Results.Ok(new { token = result.Token, expiresAtUtc = result.ExpiresAtUtc })
+        ? Results.Ok(new LoginResponse(result.Token!, result.ExpiresAtUtc!.Value))
         : Results.Unauthorized();
-});
+}).Produces<LoginResponse>(200);
 
-app.MapGet("/api/policy/payment-methods", (IChannelPolicyService channels) => Results.Ok(new
-{
-    allowed = channels.AllowedPaymentMethods(),
-}));
+app.MapGet("/api/policy/payment-methods", (IChannelPolicyService channels) => Results.Ok(
+    new PaymentMethodsResponse(channels.AllowedPaymentMethods())))
+    .Produces<PaymentMethodsResponse>(200);
 
 app.MapPost("/api/admin/promotion-channels/approvals", async (
     ApproveChannelRequest request,
@@ -124,22 +156,38 @@ app.MapPost("/api/admin/promotion-channels/approvals", async (
 
     if (result.Succeeded)
     {
-        return Results.Created($"/api/admin/promotion-channels/approvals/{result.ApprovalId}", new { id = result.ApprovalId });
+        return Results.Created(
+            $"/api/admin/promotion-channels/approvals/{result.ApprovalId}",
+            new ApprovalResponse(result.ApprovalId!.Value));
     }
 
     return result.Violation == "forbidden_role"
         ? Results.Forbid()
         : Results.UnprocessableEntity(new { violation = result.Violation });
-}).RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+})
+.Produces<ApprovalResponse>(201)
+.RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
 
 app.MapGet("/api/admin/promotion-channels/approvals", async (
     IChannelPolicyService channels,
-    CancellationToken cancellationToken) =>
-    Results.Ok(new { approvals = await channels.ListApprovedAsync(cancellationToken: cancellationToken) }))
+    CancellationToken cancellationToken) => Results.Ok(
+        new ApprovedChannelsResponse(await channels.ListApprovedAsync(null, cancellationToken))))
+    .Produces<ApprovedChannelsResponse>(200)
     .RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// OpenAPI contract consumed by the Flutter clients' codegen (task 1.2).
+app.UseSwagger(options => options.RouteTemplate = "openapi/{documentName}.json");
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "Catchen API v1");
+        options.RoutePrefix = "swagger";
+    });
+}
 
 await app.RunAsync();
 
