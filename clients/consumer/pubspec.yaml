@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  catchen_api_client:
+    path: ../api_client
 
 dev_dependencies:
   flutter_test:

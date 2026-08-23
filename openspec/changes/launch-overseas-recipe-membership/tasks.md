@@ -3,9 +3,10 @@
 - [x] 1.1 Create the ASP.NET Core modular solution, PostgreSQL schema, background workers, object storage, and audit infrastructure.
   - Audit infrastructure: append-only AuditEvents + IAuditWriter (privacy-minimized: IP digests, truncated UAs) with a daily retention worker.
   - Object storage: intentionally deferred to the Documents capability (task 3.3) — the storage port is defined by its first consumer to avoid speculative cross-module infrastructure; dev filesystem provider lands there.
-- [ ] 1.2 Create Flutter consumer and administrative shells with generated API contracts and role-aware navigation.
-  - Delivered so far: `clients/consumer` + `clients/ops` Flutter 3.47 stable shells (Android/iOS/web) with boot smoke tests; both wired into hooks/CI gates.
-  - Remaining: generated API contracts (OpenAPI → dart codegen) and role-aware navigation.
+- [x] 1.2 Create Flutter consumer and administrative shells with generated API contracts and role-aware navigation.
+  - OpenAPI contract served at `/openapi/v1.json` (Swashbuckle, bearer security scheme) and checked in at `clients/api_client/openapi.json`; typed Dart client generated via openapi-generator-cli (`catchen_api_client`, formatted + committed).
+  - Role-aware navigation: both apps gate on decoded JWT role — consumers land on home, operators on the channel-approvals console, regular users get an explicit access-denied screen.
+  - Regeneration flow: rebuild Api → curl /openapi/v1.json → npx openapi-generator-cli generate → `dart format lib` → loosen `test:` constraint → pub upgrade.
 - [x] 1.3 Implement email/non-+86 identity, agreement evidence, regional policy evaluation, and restricted-operation tests.
   - PBKDF2 passwords, JWT auth (`/api/auth/register|login`), E.164 normalization with +86 prefix rejection before any OTP/account, reason-coded region decisions, agreement acceptance evidence (version/timestamp/IP digest), admin seeding with production fail-fast; 27 unit/integration tests.
 - [x] 1.4 Add configurable payment, distribution, and promotion-channel allowlists and denylists.
