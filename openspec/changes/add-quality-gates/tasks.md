@@ -31,7 +31,7 @@
 
 - [x] 6.1 Add the CI workflow: parallel dotnet/flutter jobs running audit → format → build (warnings-as-errors) → tests → incremental coverage (PRs only). *(jobs no-op gracefully until scaffolds exist)*
 - [x] 6.2 Upload coverage reports and failure logs as artifacts; cache NuGet/pub dependencies keyed on csproj hashes (actions/cache) and pub via flutter-action cache.
-- [ ] 6.3 Mark the `build` job as the required merge check. *(procedure documented in CONTRIBUTING.md; host-side setting applied after first push to GitHub)*
+- [x] 6.3 Mark the `build` job as the required merge check. *(applied via API: required status check `build`, strict up-to-date; first CI run green on both jobs)*
 
 ## 7. AI Conventions & Branch Protection
 
