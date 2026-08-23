@@ -6,8 +6,10 @@ using Catchen.Catalog;
 using Catchen.Catalog.Models;
 using Catchen.Catalog.Services;
 using Catchen.Commerce;
+using Catchen.Commerce.Services;
 using Catchen.Data;
 using Catchen.Documents;
+using Catchen.Documents.Services;
 using Catchen.Editorial;
 using Catchen.Editorial.Services;
 using Catchen.Identity;
@@ -28,7 +30,7 @@ builder.Services.AddCatchenData(builder.Configuration);
 builder.Services.AddIdentityModule(builder.Configuration);
 builder.Services.AddCatalogModule();
 builder.Services.AddEditorialModule();
-builder.Services.AddCommerceModule();
+builder.Services.AddCommerceModule(builder.Configuration);
 builder.Services.AddDocumentsModule();
 builder.Services.AddAffiliatesModule();
 builder.Services.AddModerationModule();
@@ -335,6 +337,95 @@ static IResult ToWorkflowHttp(WorkflowResult result, string locationBase)
         ? Results.Forbid()
         : Results.UnprocessableEntity(new { violation = result.Violation });
 }
+
+// ---- Commerce (task 3.1-3.4) --------------------------------------------
+
+app.MapPost("/api/commerce/checkout/membership", async (
+    ICheckoutService checkout,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await checkout.StartMembershipCheckoutAsync(userId, ct);
+    return result.Succeeded
+        ? Results.Ok(new CheckoutCreatedResponse(result.OrderId ?? Guid.Empty, result.CheckoutUrl))
+        : Results.UnprocessableEntity(new { violation = result.Violation });
+})
+.Produces<CheckoutCreatedResponse>(200)
+.RequireAuthorization();
+
+app.MapPost("/api/commerce/checkout/recipes/{recipeId:guid}", async (
+    Guid recipeId,
+    ICheckoutService checkout,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await checkout.StartRecipePurchaseAsync(userId, recipeId, ct);
+    return result.Succeeded
+        ? Results.Ok(new CheckoutCreatedResponse(result.OrderId ?? Guid.Empty, result.CheckoutUrl))
+        : Results.UnprocessableEntity(new { violation = result.Violation });
+})
+.Produces<CheckoutCreatedResponse>(200)
+.RequireAuthorization();
+
+app.MapPost("/api/webhooks/{provider}", async (
+    string provider,
+    HttpRequest request,
+    IWebhookInboxService inbox,
+    CancellationToken ct) =>
+{
+    using var reader = new StreamReader(request.Body);
+    var body = await reader.ReadToEndAsync(ct);
+    var signature = request.Headers["Stripe-Signature"].ToString();
+    var result = await inbox.IngestAsync(provider, body, signature, ct);
+
+    // Forged or replayed callbacks never 2xx: providers should not retry
+    // security rejections the way they retry transient failures.
+    return result.Forged
+        ? Results.BadRequest(new { error = result.SkipReason })
+        : Results.Ok(new { accepted = result.Accepted, skipReason = result.SkipReason });
+}).AllowAnonymous();
+
+app.MapGet("/api/commerce/orders", async (
+    ICheckoutService checkout,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    return Results.Ok(new OrderListResponse(await checkout.MyOrdersAsync(userId, ct)));
+})
+.Produces<OrderListResponse>(200)
+.RequireAuthorization();
+
+// ---- Documents (task 3.3) -----------------------------------------------
+
+app.MapGet("/api/documents/recipes/{recipeId:guid}/pdf", async (
+    Guid recipeId,
+    IRecipeDocumentService documents,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await documents.RenderRecipePdfAsync(userId, recipeId, ct);
+    return result is null
+        ? Results.NotFound(new { reason = "locked_or_missing" })
+        : Results.File(result.PdfBytes, "application/pdf",
+            $"recipe-v{result.Version}.pdf");
+}).RequireAuthorization();
+
+app.MapPost("/api/documents/shopping-list/pdf", async (
+    ShoppingListRequest request,
+    IRecipeDocumentService documents,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var result = await documents.RenderShoppingListAsync(userId, request.RecipeIds, ct);
+    return result is null
+        ? Results.NotFound(new { reason = "no_accessible_recipes" })
+        : Results.File(result.PdfBytes, "application/pdf", "shopping-list.pdf");
+}).RequireAuthorization();
 
 app.MapGet("/api/policy/payment-methods", (IChannelPolicyService channels) => Results.Ok(
     new PaymentMethodsResponse(channels.AllowedPaymentMethods())))

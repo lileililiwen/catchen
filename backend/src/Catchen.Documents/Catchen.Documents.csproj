@@ -7,7 +7,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- QuestPDF: MIT-licensed community license tier. iText7 (AGPL) is
+         intentionally NOT used; if a future overlay on existing PDFs ever
+         needs it, the AGPL obligations must be documented here first. -->
+    <PackageReference Include="QuestPDF" Version="2024.12.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.30" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.30" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+  <!-- Declared module edges (Agents.md §2 fixture): documents render
+       published catalog recipes and enforce commerce entitlements. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Catchen.Catalog\Catchen.Catalog.csproj" />
+    <ProjectReference Include="..\Catchen.Commerce\Catchen.Commerce.csproj" />
   </ItemGroup>
 
 </Project>

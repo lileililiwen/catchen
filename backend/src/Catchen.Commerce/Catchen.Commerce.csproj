@@ -7,7 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.30" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.30" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+  <!-- Declared module edges (Agents.md §2 fixture): commerce grants
+       entitlements consumed by the catalog and records audit events. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Catchen.Catalog\Catchen.Catalog.csproj" />
+    <ProjectReference Include="..\Catchen.Identity\Catchen.Identity.csproj" />
   </ItemGroup>
 
 </Project>

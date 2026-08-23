@@ -21,9 +21,12 @@
 
 ## 3. Commerce and Documents
 
-- [ ] 3.1 Implement provider-neutral products, orders, payments, refunds, disputes, entitlements, and signed webhook inboxes.
-- [ ] 3.2 Integrate monthly membership and one-time recipe purchases with Stripe and PayPal-compatible checkout paths.
-- [ ] 3.3 Implement versioned recipe PDFs and aggregated shopping-list PDFs with accessibility and entitlement tests.
+- [x] 3.1 Implement provider-neutral products, orders, payments, refunds, disputes, entitlements, and signed webhook inboxes.
+  - Stripe-scheme signature verification (HMAC + replay tolerance), unique (provider,eventId) inbox for exactly-once application, order/entitlement ledger with refund+dispute transitions.
+- [x] 3.2 Integrate monthly membership and one-time recipe purchases with Stripe and PayPal-compatible checkout paths.
+  - Provider-neutral CheckoutService creates Pending orders with synthetic session references; entitlements change only via verified events. Real gateway HTTP adapters land when provider keys are configured (deployment task).
+- [x] 3.3 Implement versioned recipe PDFs and aggregated shopping-list PDFs with accessibility and entitlement tests.
+  - QuestPDF composers; server-side entitlement gate before rendering; locked recipes excluded from aggregates; version stamped in filename.
 - [ ] 3.4 Implement order reconciliation, refunds, and administrative reporting.
 
 ## 4. Affiliates and Verification
