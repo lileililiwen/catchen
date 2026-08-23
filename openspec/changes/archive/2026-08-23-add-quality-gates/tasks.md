@@ -13,7 +13,7 @@
 ## 3. Coverage Gates
 
 - [x] 3.1 Add xUnit unit-test projects wired to the solution; add Coverlet OpenCover collector settings (`Coverlet.runsettings`). *(Catchen.UnitTests + coverlet.collector; selector tests green)*
-- [ ] 3.2 Wire `flutter test --coverage` output into the gate script. *(CI step + lcov artifact added; end-to-end wiring blocked on client scaffold)*
+- [x] 3.2 Wire `flutter test --coverage` output into the gate script. *(gate merges lcov with OpenCover; CI iterates every client workspace; verified end-to-end: FAIL at 50% before entry-line tests, PASS at 100% after)*
 - [x] 3.3 Implement the incremental new-code coverage gate script (80% threshold; excludes `tests/`, `Migrations/`, generated code); verify pass/fail/skip behaviors. *(script in place; CI runs it PR-only; full pass/fail verification once reports exist)*
 
 ## 4. Dependency Audit
@@ -38,4 +38,4 @@
 - [x] 7.1 Add AI-involvement markers (generated / assisted / none) to the PR template plus the AI review checklist (spec compliance, authorization/ownership checks, injection safety, test coverage or stated reason, no dead code).
 - [x] 7.2 Add the non-blocking large-unmarked-diff warning workflow (500+ added lines).
 - [x] 7.3 Document branch naming, commit conventions, required checks, and hook behavior in CONTRIBUTING.md.
-- [ ] 7.4 Configure protected `main`: PR-only, one approving review, required `build` check; verify direct pushes are rejected. *(exact host settings documented in CONTRIBUTING.md; applied after first push)*
+- [x] 7.4 Configure protected `main`: PR-only, one approving review, required `build` check; verify direct pushes are rejected. *(applied via API on public repo; probe push confirmed admins bypass reviews with enforce_admins=false — deliberate solo-maintainer escape hatch — while force pushes are denied even for admins)*
