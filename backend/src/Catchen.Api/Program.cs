@@ -1,11 +1,13 @@
 using System.Security.Claims;
 using System.Text;
 using Catchen.Affiliates;
+using Catchen.Affiliates.Services;
 using Catchen.Api.Endpoints;
 using Catchen.Catalog;
 using Catchen.Catalog.Models;
 using Catchen.Catalog.Services;
 using Catchen.Commerce;
+using Catchen.Commerce.Models;
 using Catchen.Commerce.Services;
 using Catchen.Data;
 using Catchen.Documents;
@@ -305,6 +307,95 @@ app.MapPost("/api/admin/recipes/{id:guid}/unpublish", async (
     var result = await editorial.UnpublishAsync(id, userId, role, ct);
     return ToWorkflowHttp(result, "/api/catalog/recipes");
 }).RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+// ---- Affiliates (task 4.1) ----------------------------------------------
+
+app.MapGet("/go/{slug}", async (
+    string slug,
+    string? cid,
+    IAffiliateLinkService affiliates,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    Guid? userId = principal.FindFirstValue(ClaimTypes.NameIdentifier) is { } raw
+        ? Guid.Parse(raw)
+        : null;
+    var result = await affiliates.ResolveRedirectAsync(slug, cid, userId, ct);
+    if (result.Allowed && result.Destination is string destination)
+    {
+        return Results.Redirect(destination, permanent: false);
+    }
+
+    return result.Violation == "merchant_not_allowlisted"
+        ? Results.NotFound(new { error = result.Violation })
+        : Results.Forbid();
+}).AllowAnonymous();
+
+app.MapPost("/api/admin/affiliates/merchants", async (
+    RegisterMerchantRequest request,
+    IAffiliateLinkService affiliates,
+    ClaimsPrincipal principal,
+    CancellationToken ct) =>
+{
+    var userId = Guid.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    var role = principal.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+    var result = await affiliates.RegisterMerchantAsync(
+        request.Slug, request.DisplayName, request.BaseUrl, request.AttributionTag,
+        userId, role, ct);
+    if (result.Allowed)
+    {
+        return Results.Created(result.Destination, new { slug = request.Slug });
+    }
+
+    return result.Violation == "forbidden_role"
+        ? Results.Forbid()
+        : Results.UnprocessableEntity(new { violation = result.Violation });
+})
+.RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+app.MapGet("/api/admin/affiliates/merchants", async (
+    IAffiliateLinkService affiliates, CancellationToken ct) =>
+    Results.Ok(new { merchants = await affiliates.ListMerchantsAsync(ct) }))
+.RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+app.MapPost("/api/admin/affiliates/commissions/import", async (
+    CommissionImportRequest request,
+    ICommissionImportService import,
+    CancellationToken ct) =>
+    Results.Ok(await import.ImportAsync(request.Provider, request.Rows, ct)))
+.RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+app.MapGet("/api/admin/affiliates/commissions", async (
+    ICommissionImportService import,
+    string? merchant,
+    CancellationToken ct) =>
+    Results.Ok(new { rows = await import.AcceptedRowsAsync(merchant, ct) }))
+.RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+// ---- Reporting (tasks 3.4 / 4.2) ----------------------------------------
+
+app.MapGet("/api/admin/reports/orders", async (
+    IOrderReportingService reporting,
+    DateTimeOffset? from,
+    DateTimeOffset? to,
+    string? provider,
+    string? currency,
+    OrderStatus? status,
+    CancellationToken ct) =>
+    Results.Ok(await reporting.ReportAsync(from, to, provider, currency, status, ct)))
+.RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+app.MapGet("/api/admin/reports/moderation", async (
+    ICommentsService comments, CancellationToken ct) =>
+{
+    var (visible, hidden) = await comments.CountsAsync(ct);
+    return Results.Ok(new { visible, hidden });
+}).RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
+
+app.MapGet("/api/admin/reports/publications", async (
+    IEditorialWorkflowService editorial, CancellationToken ct) =>
+    Results.Ok(await editorial.StatusCountsAsync(ct)))
+.RequireAuthorization(policy => policy.RequireRole(AppUserRoles.Administrator));
 
 // ---- Moderation (administrator) -----------------------------------------
 

@@ -48,6 +48,9 @@ public interface IEditorialWorkflowService
 
     Task<WorkflowResult> UnpublishAsync(
         Guid recipeId, Guid actorUserId, string actorRole, CancellationToken cancellationToken = default);
+
+    /// <summary>Publication-status counters for ops reporting (task 4.2).</summary>
+    Task<IReadOnlyDictionary<string, int>> StatusCountsAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class EditorialWorkflowService(
@@ -324,6 +327,15 @@ public sealed class EditorialWorkflowService(
             "PublishedRecipe", recipeId.ToString(), new { versions = live.Count }, cancellationToken);
 
         return WorkflowResult.Ok(recipeId);
+    }
+
+    public async Task<IReadOnlyDictionary<string, int>> StatusCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var rows = await db.Set<RecipeDraft>().AsNoTracking().ToListAsync(cancellationToken);
+        return rows
+            .GroupBy(d => d.Status.ToString())
+            .ToDictionary(g => g.Key, g => g.Count());
     }
 
     private async Task<RecipeDraft?> FindDraft(Guid id, CancellationToken ct)
